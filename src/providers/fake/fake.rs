@@ -42,6 +42,8 @@ impl CreatorFn for Creator {
     }
 }
 
+use crate::StandardServer;
+
 #[async_trait]
 impl ServerFn for Server {
     type DeleteResult = ();
@@ -61,6 +63,17 @@ impl ServerFn for Server {
     async fn update(&mut self) -> Result<(), anyhow::Error> {
         Err(anyhow::anyhow!("Update not implemented for fake"))
     }
+
+    async fn as_standard_server(&self) -> Result<StandardServer, anyhow::Error> {
+
+        Ok(StandardServer {
+            ip: self.ip.clone(),
+            id: self.id.clone(),
+            password: None
+        })
+    }
+
+    fn needs_update() -> bool { true }
 }
 
 

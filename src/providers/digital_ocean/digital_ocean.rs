@@ -2,7 +2,7 @@
 
 use async_trait::async_trait;
 
-use crate::{CreatorFn, ServerFn, AsStandardServer};
+use crate::{CreatorFn, ServerFn};
 
 
 // All providers must have the following structs:
@@ -59,54 +59,6 @@ impl Preset for Request {
 }
 
 use crate::StandardServer;
-
-#[async_trait]
-impl AsStandardServer for Server {
-    async fn as_standard_server(&self) -> Result<StandardServer, anyhow::Error> {
-
-        let ip = match self.droplet.as_ref() {
-            Some(s) => {
-                match s.networks.as_ref() {
-                    Some(s) => {
-                        match s.v4.as_ref() {
-                            Some(s) => {
-                                match s.first() {
-                                    Some(s) => match s {
-                                        Some(s) => match s.ip_address.borrow() {
-                                            Some(s) => {
-                                                s.clone()
-                                            },
-                                            None => return Err(anyhow::anyhow!("No ip address found"))
-                                        }
-                                        None => return Err(anyhow::anyhow!("No ipv4 networks found"))
-                                    }
-                                    None => return Err(anyhow::anyhow!("No networks found"))
-                                }
-                            },
-                            None => return Err(anyhow::anyhow!("No networks found"))
-                        }
-                    },
-                    None => return Err(anyhow::anyhow!("No networks found"))
-                }
-            },
-            None => return Err(anyhow::anyhow!("No droplet found"))
-        };
-
-        let id = match self.droplet.as_ref().unwrap().id {
-            Some(id) => id.to_string(),
-            None => return Err(anyhow::anyhow!("No id found"))
-        };
-
-        Ok(StandardServer {
-            ip: ip,
-            id: id,
-            password: None
-        })
-    }
-
-    fn needs_update() -> bool { true }
-
-}
 
 use std::{borrow::Borrow, iter};
 use rand::{Rng, thread_rng};
@@ -210,5 +162,49 @@ impl ServerFn for Server {
         self.links = server.links;
         Ok(())
     }
+
+    async fn as_standard_server(&self) -> Result<StandardServer, anyhow::Error> {
+
+        let ip = match self.droplet.as_ref() {
+            Some(s) => {
+                match s.networks.as_ref() {
+                    Some(s) => {
+                        match s.v4.as_ref() {
+                            Some(s) => {
+                                match s.first() {
+                                    Some(s) => match s {
+                                        Some(s) => match s.ip_address.borrow() {
+                                            Some(s) => {
+                                                s.clone()
+                                            },
+                                            None => return Err(anyhow::anyhow!("No ip address found"))
+                                        }
+                                        None => return Err(anyhow::anyhow!("No ipv4 networks found"))
+                                    }
+                                    None => return Err(anyhow::anyhow!("No networks found"))
+                                }
+                            },
+                            None => return Err(anyhow::anyhow!("No networks found"))
+                        }
+                    },
+                    None => return Err(anyhow::anyhow!("No networks found"))
+                }
+            },
+            None => return Err(anyhow::anyhow!("No droplet found"))
+        };
+
+        let id = match self.droplet.as_ref().unwrap().id {
+            Some(id) => id.to_string(),
+            None => return Err(anyhow::anyhow!("No id found"))
+        };
+
+        Ok(StandardServer {
+            ip: ip,
+            id: id,
+            password: None
+        })
+    }
+
+    fn needs_update() -> bool { true }
 }
 
