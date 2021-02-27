@@ -6,7 +6,6 @@ pub trait ServerFn {
     type DeleteResult;
     async fn delete(&self) -> Result<Self::DeleteResult, anyhow::Error>;
     async fn update(&mut self)-> Result<(), anyhow::Error>;
-    
     async fn as_standard_server(&self) -> Result<StandardServer, anyhow::Error>;
     fn needs_update() -> bool;
 }

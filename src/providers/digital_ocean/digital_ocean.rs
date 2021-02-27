@@ -32,6 +32,7 @@ use super::digital_ocean_response::Server;
 
 // The creator struct stores information needed to create new servers with the underlying provider.
 // The creator struct implements the ServerFn trait, which provides a simple interface for creating new servers.
+#[derive(Debug)]
 pub struct Creator(pub &'static str);
 
 use super::digital_ocean_request::Server as Request;
