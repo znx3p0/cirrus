@@ -26,7 +26,7 @@ pub trait Preset {
 pub trait CreatorFn {
     type Server: ServerFn;
     type Metadata;
-    type ServerRequest;
+    type ServerRequest: Preset;
 
     async fn new(metadata: Self::Metadata) -> Self;
     async fn create(&self, server_request: &Self::ServerRequest) -> Result<Self::Server, anyhow::Error>;

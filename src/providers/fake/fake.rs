@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use reqwest;
 use async_trait::async_trait;
 
-use crate::{CreatorFn, ServerFn};
+use crate::{CreatorFn, Preset, ServerFn};
 
 #[allow(unused)]
 const URL: &str = "http://localhost:8080";
@@ -18,6 +18,12 @@ pub struct Server {
 }
 
 pub struct Creator;
+
+impl Preset for () {
+    fn preset(_region: &str, _size: &str, _image: &str, _ssh_keys: Option<Vec<String>>) -> Self {()}
+    fn with_name(self, _name: &str) -> Self {()}
+    fn with_prefix(self, _name: &str) -> Self {()}
+}
 
 #[async_trait]
 impl CreatorFn for Creator {
