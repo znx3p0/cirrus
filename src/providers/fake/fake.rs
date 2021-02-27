@@ -57,6 +57,10 @@ impl ServerFn for Server {
 
         Ok(())
     }
+
+    async fn update(&mut self) -> Result<(), anyhow::Error> {
+        Err(anyhow::anyhow!("Update not implemented for fake"))
+    }
 }
 
 
