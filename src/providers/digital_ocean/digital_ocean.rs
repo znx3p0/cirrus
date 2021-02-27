@@ -64,18 +64,49 @@ use crate::StandardServer;
 impl AsStandardServer for Server {
     async fn as_standard_server(&self) -> Result<StandardServer, anyhow::Error> {
 
-        let ip = self.droplet.as_ref().unwrap().networks.as_ref().unwrap().v4.as_ref().unwrap().first().unwrap().as_ref().unwrap().ip_address.as_ref().unwrap().clone();
+        let ip = match self.droplet.as_ref() {
+            Some(s) => {
+                match s.networks.as_ref() {
+                    Some(s) => {
+                        match s.v4.as_ref() {
+                            Some(s) => {
+                                match s.first() {
+                                    Some(s) => match s {
+                                        Some(s) => match s.ip_address.borrow() {
+                                            Some(s) => {
+                                                s.clone()
+                                            },
+                                            None => return Err(anyhow::anyhow!("No ip address found"))
+                                        }
+                                        None => return Err(anyhow::anyhow!("No ipv4 networks found"))
+                                    }
+                                    None => return Err(anyhow::anyhow!("No networks found"))
+                                }
+                            },
+                            None => return Err(anyhow::anyhow!("No networks found"))
+                        }
+                    },
+                    None => return Err(anyhow::anyhow!("No networks found"))
+                }
+            },
+            None => return Err(anyhow::anyhow!("No droplet found"))
+        };
+
+        let id = match self.droplet.as_ref().unwrap().id {
+            Some(id) => id.to_string(),
+            None => return Err(anyhow::anyhow!("No id found"))
+        };
 
         Ok(StandardServer {
             ip: ip,
-            id: self.droplet.as_ref().unwrap().id.unwrap().to_string(),
+            id: id,
             password: None
         })
     }
 
 }
 
-use std::iter;
+use std::{borrow::Borrow, iter};
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 
@@ -162,7 +193,7 @@ impl ServerFn for Server {
         println!("{}", res);
         Ok(())
     }
-    
+
     async fn update(&mut self) -> Result<(), anyhow::Error> {
         let text = reqwest::Client::new()
             .get(&format!("{}/v2/droplets/{}", URL, self.droplet.as_ref().unwrap().id.unwrap()))
