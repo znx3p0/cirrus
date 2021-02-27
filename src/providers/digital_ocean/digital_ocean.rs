@@ -73,20 +73,6 @@ impl AsStandardServer for Server {
         })
     }
 
-    async fn update(&mut self) -> Result<(), anyhow::Error> {
-        let text = reqwest::Client::new()
-            .get(&format!("{}/v2/droplets/{}", URL, self.droplet.as_ref().unwrap().id.unwrap()))
-            .header("Authorization", &format!("Bearer {}", self.auth.unwrap()))
-            .send()
-            .await?
-            .text()
-            .await?;
-        
-        let server = serde_json::from_str::<Server>(&text)?;
-        self.droplet = server.droplet;
-        self.links = server.links;
-        Ok(())
-    }
 }
 
 use std::iter;
@@ -174,6 +160,21 @@ impl ServerFn for Server {
             .await?;
         
         println!("{}", res);
+        Ok(())
+    }
+    
+    async fn update(&mut self) -> Result<(), anyhow::Error> {
+        let text = reqwest::Client::new()
+            .get(&format!("{}/v2/droplets/{}", URL, self.droplet.as_ref().unwrap().id.unwrap()))
+            .header("Authorization", &format!("Bearer {}", self.auth.unwrap()))
+            .send()
+            .await?
+            .text()
+            .await?;
+        
+        let server = serde_json::from_str::<Server>(&text)?;
+        self.droplet = server.droplet;
+        self.links = server.links;
         Ok(())
     }
 }

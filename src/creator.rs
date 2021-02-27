@@ -5,6 +5,7 @@ use async_trait::async_trait;
 pub trait ServerFn {
     type DeleteResult;
     async fn delete(&self) -> Result<Self::DeleteResult, anyhow::Error>;
+    async fn update(&mut self)-> Result<(), anyhow::Error>;
 }
 
 pub struct StandardServer {
@@ -16,7 +17,6 @@ pub struct StandardServer {
 #[async_trait]
 pub trait AsStandardServer {
     async fn as_standard_server(&self) -> Result<StandardServer, anyhow::Error>;
-    async fn update(&mut self)-> Result<(), anyhow::Error>;
 }
 
 pub trait Preset {
