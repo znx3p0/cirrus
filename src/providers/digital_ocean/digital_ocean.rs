@@ -104,6 +104,8 @@ impl AsStandardServer for Server {
         })
     }
 
+    fn needs_update() -> bool { true }
+
 }
 
 use std::{borrow::Borrow, iter};

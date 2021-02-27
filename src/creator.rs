@@ -17,6 +17,7 @@ pub struct StandardServer {
 #[async_trait]
 pub trait AsStandardServer {
     async fn as_standard_server(&self) -> Result<StandardServer, anyhow::Error>;
+    fn needs_update() -> bool;
 }
 
 pub trait Preset {
