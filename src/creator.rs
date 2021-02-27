@@ -11,9 +11,10 @@ pub trait ServerFn {
 pub trait CreatorFn {
     type Server: ServerFn;
     type Metadata;
+    type ServerRequest;
 
     async fn new(metadata: Self::Metadata) -> Self;
-    async fn create(&self) -> Result<Self::Server, anyhow::Error>;
+    async fn create(&self, server_request: Self::ServerRequest) -> Result<Self::Server, anyhow::Error>;
 }
 
 

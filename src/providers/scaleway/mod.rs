@@ -1,4 +1,5 @@
 mod scaleway;
-mod scaleway_response;
+pub mod scaleway_request;
+pub mod scaleway_response;
 
 pub use scaleway::*;

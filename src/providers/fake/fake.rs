@@ -23,11 +23,12 @@ pub struct Creator;
 impl CreatorFn for Creator {
     type Server = Server;
     type Metadata = CreatorMetadata;
+    type ServerRequest = ();
     async fn new(_meta: Self::Metadata) -> Self {
         Creator
     }
 
-    async fn create(&self) -> Result<Self::Server, anyhow::Error> {
+    async fn create(&self, _: ()) -> Result<Self::Server, anyhow::Error> {
         println!("Creating server");
         let res = reqwest::Client::new()
             .get(&format!("{}/fake/create", URL))
