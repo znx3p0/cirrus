@@ -2,7 +2,7 @@
 
 use async_trait::async_trait;
 
-use crate::{CreatorFn, ServerFn};
+use crate::{CreatorFn, ServerFn, AsStandardServer};
 
 
 // All providers must have the following structs:
@@ -35,11 +35,7 @@ use super::digital_ocean_response::Server;
 pub struct Creator(pub &'static str);
 
 use super::digital_ocean_request::Server as Request;
-pub trait Preset {
-    fn preset(region: &str, size: &str, image: &str, ssh_keys: Option<Vec<String>>) -> Self;
-    fn with_name(self, name: &str) -> Self;
-    fn with_prefix(self, name: &str) -> Self;
-}
+use crate::Preset;
 
 impl Preset for Request {
     fn preset(region: &str, size: &str, image: &str, ssh_keys: Option<Vec<String>>) -> Self {
@@ -59,6 +55,37 @@ impl Preset for Request {
     fn with_prefix(mut self, prefix: &str) -> Self {
         self.name = format!("{}{}", prefix, rand_str());
         self
+    }
+}
+
+use crate::StandardServer;
+
+#[async_trait]
+impl AsStandardServer for Server {
+    async fn as_standard_server(&self) -> Result<StandardServer, anyhow::Error> {
+
+        let ip = self.droplet.as_ref().unwrap().networks.as_ref().unwrap().v4.as_ref().unwrap().first().unwrap().as_ref().unwrap().ip_address.as_ref().unwrap().clone();
+
+        Ok(StandardServer {
+            ip: ip,
+            id: self.droplet.as_ref().unwrap().id.unwrap().to_string(),
+            password: None
+        })
+    }
+
+    async fn update(&mut self) -> Result<(), anyhow::Error> {
+        let text = reqwest::Client::new()
+            .get(&format!("{}/v2/droplets/{}", URL, self.droplet.as_ref().unwrap().id.unwrap()))
+            .header("Authorization", &format!("Bearer {}", self.auth.unwrap()))
+            .send()
+            .await?
+            .text()
+            .await?;
+        
+        let server = serde_json::from_str::<Server>(&text)?;
+        self.droplet = server.droplet;
+        self.links = server.links;
+        Ok(())
     }
 }
 
@@ -116,7 +143,7 @@ impl CreatorFn for Creator {
         Creator(meta)
     }
 
-    async fn create(&self, rq: Self::ServerRequest) -> Result<Self::Server, anyhow::Error> {
+    async fn create(&self, rq: &Self::ServerRequest) -> Result<Self::Server, anyhow::Error> {
         let res = reqwest::Client::new()
             .post(&format!("{}/v2/droplets", URL))
             .header("Authorization", &format!("Bearer {}", self.0))
@@ -127,7 +154,6 @@ impl CreatorFn for Creator {
             .text()
             .await?;
         
-        println!("{:#?}", res);
         let mut s: Server = serde_json::from_str(&res)?;
         s.auth = Some(&self.0);
         Ok(s)

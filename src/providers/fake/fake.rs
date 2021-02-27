@@ -28,7 +28,7 @@ impl CreatorFn for Creator {
         Creator
     }
 
-    async fn create(&self, _: ()) -> Result<Self::Server, anyhow::Error> {
+    async fn create(&self, _: &()) -> Result<Self::Server, anyhow::Error> {
         println!("Creating server");
         let res = reqwest::Client::new()
             .get(&format!("{}/fake/create", URL))
