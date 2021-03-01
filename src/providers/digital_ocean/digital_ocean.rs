@@ -39,7 +39,13 @@ use super::digital_ocean_request::Server as Request;
 
 #[derive(Debug)]
 pub struct RqCr <'a> {
-    pub region: &'a str, pub size: &'a str, pub image: &'a str, pub ssh_keys: Option<Vec<String>>
+    pub region: &'a str, pub size: &'a str, pub image: &'a str, pub ssh_keys: Option<Vec<String>>, pub default: RequestKind<'a>
+}
+
+#[derive(Debug)]
+pub enum RequestKind <'a> {
+    WithName(&'a str),
+    WithPrefix(&'a str),
 }
 
 impl RequestFn for Request {}
@@ -121,7 +127,10 @@ impl <'a> Creator<'a> {
 #[async_trait]
 impl <'creator, 'server> CreatorFn<'creator, 'server> for Creator<'creator> {
     async fn create(&'static self) -> Result<Box<dyn ServerFn>, anyhow::Error> {
-        let req = self.1.with_prefix("CASSIOPEIA-");
+        let req = match self.1.default {
+            RequestKind::WithName(name) => self.1.with_name(name),
+            RequestKind::WithPrefix(prefix) => self.1.with_prefix(&format!("{}{}", prefix, rand_str())),
+        };
         let str = serde_json::to_string::<Request>(&req)?;
         let req = reqwest::Client::new()
             .post(&format!("{}/v2/droplets", URL))
