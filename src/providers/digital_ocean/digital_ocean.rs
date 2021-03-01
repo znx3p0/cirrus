@@ -2,7 +2,7 @@
 
 use async_trait::async_trait;
 
-use crate::{CreatorFn, ServerFn};
+use crate::{CreatorFn, DeleteResult, RequestCreator, RequestFn, ServerFn, providers};
 
 
 // All providers must have the following structs:
@@ -33,30 +33,40 @@ use super::digital_ocean_response::Server;
 // The creator struct stores information needed to create new servers with the underlying provider.
 // The creator struct implements the ServerFn trait, which provides a simple interface for creating new servers.
 #[derive(Debug)]
-pub struct Creator(pub &'static str);
+pub struct Creator<'a>(pub &'a str, pub RqCr<'a>);
 
 use super::digital_ocean_request::Server as Request;
-use crate::Preset;
 
-impl Preset for Request {
-    fn preset(region: &str, size: &str, image: &str, ssh_keys: Option<Vec<String>>) -> Self {
-        let mut req = Request::default();
-        req.region = region.into();
-        req.size = size.into();
-        req.image = image.into();
-        req.ssh_keys = ssh_keys;
-        req
+#[derive(Debug)]
+pub struct RqCr <'a> {
+    pub region: &'a str, pub size: &'a str, pub image: &'a str, pub ssh_keys: Option<Vec<String>>
+}
+
+impl RequestFn for Request {}
+
+impl RequestCreator for RqCr<'_> {
+    type Request = Request;
+
+    fn with_name(&self, name: &str) -> Self::Request {
+        let mut rq = Request::default();
+        rq.region = self.region.to_string();
+        rq.name = name.to_string();
+        rq.image = self.image.to_string();
+        rq.size = self.size.to_string();
+        rq.ssh_keys = self.ssh_keys.clone();
+        rq
     }
 
-    fn with_name(mut self, name: &str) -> Self {
-        self.name = name.into();
-        self
+    fn with_prefix(&self, prefix: &str) -> Self::Request {
+        let mut rq = Request::default();
+        rq.region = self.region.to_string();
+        rq.name = format!("{}{}", prefix, rand_str());
+        rq.image = self.image.to_string();
+        rq.size = self.size.to_string();
+        rq.ssh_keys = self.ssh_keys.clone();
+        rq
     }
 
-    fn with_prefix(mut self, prefix: &str) -> Self {
-        self.name = format!("{}{}", prefix, rand_str());
-        self
-    }
 }
 
 use crate::StandardServer;
@@ -90,7 +100,6 @@ pub mod datacenters {
     pub const TORONTO: &str = "tor1";
     pub const BANGALORE: &str = "blr1";
 }
-
 pub mod droplets {
     pub const S1GB_1CPU: &str = "s-1vcpu-1gb";
     pub const S2GB_1CPU: &str = "s-1vcpu-2gb";
@@ -98,29 +107,28 @@ pub mod droplets {
     pub const S2GB_4CPU: &str = "s-2vcpu-4gb";
     pub const S4GB_8CPU: &str = "s-4vcpu-8gb";
 }
-
 pub mod images {
     pub const UBUNTU_16_04: &str = "ubuntu-16-04-x64";
     pub const UBUNTU_18_04: &str = "ubuntu-18-04-x64";
     pub const UBUNTU_20_04: &str = "ubuntu-20-04-x64";
 }
+impl <'a> Creator<'a> {
+    pub async fn new(meta: &'static str, request_creator: RqCr<'a>) -> providers::digital_ocean::digital_ocean::Creator<'a> {
+        Creator(meta, request_creator)
+    }
+}
 
 #[async_trait]
-impl CreatorFn for Creator {
-    type Server = Server;
-    type Metadata = &'static str;
-    type ServerRequest = Request;
-
-    async fn new(meta: Self::Metadata) -> Self {
-        Creator(meta)
-    }
-
-    async fn create(&self, rq: &Self::ServerRequest) -> Result<Self::Server, anyhow::Error> {
-        let res = reqwest::Client::new()
+impl <'creator, 'server> CreatorFn<'creator, 'server> for Creator<'creator> {
+    async fn create(&'static self) -> Result<Box<dyn ServerFn>, anyhow::Error> {
+        let req = self.1.with_prefix("CASSIOPEIA-");
+        let str = serde_json::to_string::<Request>(&req)?;
+        let req = reqwest::Client::new()
             .post(&format!("{}/v2/droplets", URL))
             .header("Authorization", &format!("Bearer {}", self.0))
             .header("Content-Type", "application/json")
-            .body(serde_json::to_string(&rq)?)
+            .body(str);
+        let res = req
             .send()
             .await?
             .text()
@@ -128,14 +136,13 @@ impl CreatorFn for Creator {
         
         let mut s: Server = serde_json::from_str(&res)?;
         s.auth = Some(&self.0);
-        Ok(s)
+        Ok(Box::new(s))
     }
 }
 
 #[async_trait]
 impl ServerFn for Server {
-    type DeleteResult = ();
-    async fn delete(&self) -> Result<(), anyhow::Error> {
+    async fn delete <'a> (&self) -> Result<&'a dyn DeleteResult, anyhow::Error> {
         let res = reqwest::Client::new()
             .delete(&format!("{}/v2/droplets/{}", URL, self.droplet.as_ref().unwrap().id.unwrap()))
             .header("Authorization", &format!("Bearer {}", self.auth.as_ref().unwrap()))
@@ -146,7 +153,7 @@ impl ServerFn for Server {
             .await?;
         
         println!("{}", res);
-        Ok(())
+        Ok(&())
     }
 
     async fn update(&mut self) -> Result<(), anyhow::Error> {
@@ -206,6 +213,6 @@ impl ServerFn for Server {
         })
     }
 
-    fn needs_update() -> bool { true }
+    fn needs_update(&self) -> bool { true }
 }
 
