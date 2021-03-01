@@ -1,4 +1,3 @@
-// mod fake;
-mod fakes;
+mod fake;
 
-pub use fakes::*;
+pub use fake::*;

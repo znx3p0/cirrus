@@ -171,7 +171,9 @@ impl ServerFn for Server {
         Ok(())
     }
 
-    async fn as_standard_server(&self) -> Result<StandardServer, anyhow::Error> {
+    async fn as_standard_server(&mut self) -> Result<StandardServer, anyhow::Error> {
+
+        self.update().await.ok();
 
         let ip = match self.droplet.as_ref() {
             Some(s) => {
