@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 
 #[async_trait]
 pub trait ServerFn {
-    async fn delete<'b>(&self) -> Result<&'b dyn DeleteResult, anyhow::Error>;
+    async fn delete(&self) -> Result<Box<dyn DeleteResult>, anyhow::Error>;
     async fn update(&mut self)-> Result<(), anyhow::Error>;
     async fn as_standard_server(&mut self) -> Result<StandardServer, anyhow::Error>;
     fn needs_update(&self) -> bool;

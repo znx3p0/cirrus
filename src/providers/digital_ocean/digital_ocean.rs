@@ -119,8 +119,8 @@ pub mod images {
     pub const UBUNTU_20_04: &str = "ubuntu-20-04-x64";
 }
 impl <'a> Creator<'a> {
-    pub async fn new(meta: &'static str, request_creator: RqCr<'a>) -> providers::digital_ocean::digital_ocean::Creator<'a> {
-        Creator(meta, request_creator)
+    pub async fn new(meta: &'static str, request_creator: RqCr<'a>) -> Box<providers::digital_ocean::digital_ocean::Creator<'a>> {
+        Box::new(Creator(meta, request_creator))
     }
 }
 
@@ -151,7 +151,7 @@ impl <'creator, 'server> CreatorFn<'creator, 'server> for Creator<'creator> {
 
 #[async_trait]
 impl ServerFn for Server {
-    async fn delete <'a> (&self) -> Result<&'a dyn DeleteResult, anyhow::Error> {
+    async fn delete(&self) -> Result<Box<dyn DeleteResult>, anyhow::Error> {
         let res = reqwest::Client::new()
             .delete(&format!("{}/v2/droplets/{}", URL, self.droplet.as_ref().unwrap().id.unwrap()))
             .header("Authorization", &format!("Bearer {}", self.auth.as_ref().unwrap()))
@@ -162,7 +162,7 @@ impl ServerFn for Server {
             .await?;
         
         println!("{}", res);
-        Ok(&())
+        Ok(Box::new(()))
     }
 
     async fn update(&mut self) -> Result<(), anyhow::Error> {
@@ -181,8 +181,6 @@ impl ServerFn for Server {
     }
 
     async fn as_standard_server(&mut self) -> Result<StandardServer, anyhow::Error> {
-
-        self.update().await.ok();
 
         let ip = match self.droplet.as_ref() {
             Some(s) => {

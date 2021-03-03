@@ -55,8 +55,8 @@ use crate::StandardServer;
 // }
 
 impl <'a> Creator<'a> {
-    pub async fn new(meta: &'static str, request_creator: RqCr) -> Creator<'a> {
-        Creator(meta, request_creator)
+    pub async fn new(meta: &'static str, request_creator: RqCr) -> Box<Creator<'a>> {
+        Box::new(Creator(meta, request_creator))
     }
 }
 
@@ -77,7 +77,7 @@ impl <'creator, 'server> CreatorFn<'creator, 'server> for Creator<'creator> {
 
 #[async_trait]
 impl ServerFn for Server {
-    async fn delete <'a> (&self) -> Result<&'a dyn DeleteResult, anyhow::Error> {
+    async fn delete(&self) -> Result<Box<dyn DeleteResult>, anyhow::Error> {
         reqwest::Client::new()
         .delete(&format!("{}/fake/delete/{}", URL, self.id))
             .send()
@@ -85,7 +85,7 @@ impl ServerFn for Server {
             .text()
             .await?;
 
-        Ok(&())
+        Ok(Box::new(()))
     }
 
     async fn update(&mut self) -> Result<(), anyhow::Error> {
