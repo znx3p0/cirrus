@@ -11,6 +11,7 @@ pub trait ServerFn {
 }
 
 pub trait DeleteResult {}
+impl DeleteResult for () {}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StandardServer {
@@ -20,6 +21,7 @@ pub struct StandardServer {
 }
 
 pub trait RequestFn {}
+
 
 pub trait RequestCreator {
     type Request: RequestFn;
@@ -33,5 +35,36 @@ pub trait CreatorFn <'creator, 'server> {
     async fn create(&'static self) -> Result<Box<dyn ServerFn>, anyhow::Error>;
 }
 
-impl DeleteResult for () {}
+
+
+impl std::fmt::Debug for dyn CreatorFn<'_, '_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("dyn CreatorFn")
+    }
+}
+
+impl <T> std::fmt::Debug for dyn RequestCreator<Request = T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("dyn RequestCreator<T>")
+    }
+}
+
+impl std::fmt::Debug for dyn RequestFn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("dyn RequestFn")
+    }
+}
+
+impl std::fmt::Debug for dyn ServerFn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("dyn ServerFn")
+    }
+}
+
+impl std::fmt::Debug for dyn DeleteResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("dyn DeleteResult")
+    }
+}
+
 
