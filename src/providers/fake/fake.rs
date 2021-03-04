@@ -1,5 +1,6 @@
 
 
+
 use async_trait::async_trait;
 
 use crate::{CreatorFn, DeleteResult, RequestCreator, RequestFn, ServerFn};
@@ -20,7 +21,7 @@ use crate::StandardServer as Server;
 // The creator struct stores information needed to create new servers with the underlying provider.
 // The creator struct implements the ServerFn trait, which provides a simple interface for creating new servers.
 #[derive(Debug)]
-pub struct Creator<'a>(pub &'a str, pub RqCr);
+pub struct Creator(pub String, pub RqCr);
 
 type Request = ();
 
@@ -54,15 +55,15 @@ use crate::StandardServer;
 //         .collect()
 // }
 
-impl <'a> Creator<'a> {
-    pub async fn new(meta: &'static str, request_creator: RqCr) -> Box<Creator<'a>> {
-        Box::new(Creator(meta, request_creator))
+impl Creator {
+    pub async fn new(meta: &str, request_creator: RqCr) -> Box<dyn CreatorFn> {
+        Box::new(Creator(meta.to_string(), request_creator))
     }
 }
 
 #[async_trait]
-impl <'creator, 'server> CreatorFn<'creator, 'server> for Creator<'creator> {
-    async fn create(&'static self) -> Result<Box<dyn ServerFn>, anyhow::Error> {
+impl CreatorFn for Creator {
+    async fn create(&self) -> Result<Box<dyn ServerFn>, anyhow::Error> {
         let res = reqwest::Client::new()
             .get(&format!("{}/fake/create", URL))
             .send()

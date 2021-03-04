@@ -13,7 +13,7 @@ pub trait ServerFn {
 pub trait DeleteResult {}
 impl DeleteResult for () {}
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct StandardServer {
     pub ip: String,
     pub id: String,
@@ -31,13 +31,13 @@ pub trait RequestCreator {
 }
 
 #[async_trait]
-pub trait CreatorFn <'creator, 'server> {
-    async fn create(&'static self) -> Result<Box<dyn ServerFn>, anyhow::Error>;
+pub trait CreatorFn {
+    async fn create(&self) -> Result<Box<dyn ServerFn>, anyhow::Error>;
 }
 
 
 
-impl std::fmt::Debug for dyn CreatorFn<'_, '_> {
+impl std::fmt::Debug for dyn CreatorFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("dyn CreatorFn")
     }

@@ -2,7 +2,7 @@
 
 use async_trait::async_trait;
 
-use crate::{CreatorFn, DeleteResult, RequestCreator, RequestFn, ServerFn, providers};
+use crate::{CreatorFn, DeleteResult, RequestCreator, RequestFn, ServerFn};
 
 
 // All providers must have the following structs:
@@ -33,24 +33,24 @@ use super::digital_ocean_response::Server;
 // The creator struct stores information needed to create new servers with the underlying provider.
 // The creator struct implements the ServerFn trait, which provides a simple interface for creating new servers.
 #[derive(Debug)]
-pub struct Creator<'a>(pub &'a str, pub RqCr<'a>);
+pub struct Creator(pub Arc<String> /* api key */, pub RqCr /* request creator */);
 
 use super::digital_ocean_request::Server as Request;
 
 #[derive(Debug)]
-pub struct RqCr <'a> {
-    pub region: &'a str, pub size: &'a str, pub image: &'a str, pub ssh_keys: Option<Vec<String>>, pub default: RequestKind<'a>
+pub struct RqCr {
+    pub region: String, pub size: String, pub image: String, pub ssh_keys: Option<Vec<String>>, pub default: RequestKind
 }
 
 #[derive(Debug)]
-pub enum RequestKind <'a> {
-    WithName(&'a str),
-    WithPrefix(&'a str),
+pub enum RequestKind {
+    WithName(String),
+    WithPrefix(String),
 }
 
 impl RequestFn for Request {}
 
-impl RequestCreator for RqCr<'_> {
+impl RequestCreator for RqCr {
     type Request = Request;
 
     fn with_name(&self, name: &str) -> Self::Request {
@@ -77,7 +77,7 @@ impl RequestCreator for RqCr<'_> {
 
 use crate::StandardServer;
 
-use std::{borrow::Borrow, iter};
+use std::{borrow::Borrow, iter, sync::Arc};
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 
@@ -118,17 +118,17 @@ pub mod images {
     pub const UBUNTU_18_04: &str = "ubuntu-18-04-x64";
     pub const UBUNTU_20_04: &str = "ubuntu-20-04-x64";
 }
-impl <'a> Creator<'a> {
-    pub async fn new(meta: &'static str, request_creator: RqCr<'a>) -> Box<providers::digital_ocean::digital_ocean::Creator<'a>> {
-        Box::new(Creator(meta, request_creator))
+impl Creator {
+    pub async fn new(meta: &str, request_creator: RqCr) -> Box<dyn CreatorFn> {
+        Box::new(Creator(Arc::new(meta.to_string()), request_creator))
     }
 }
 
 #[async_trait]
-impl <'creator, 'server> CreatorFn<'creator, 'server> for Creator<'creator> {
-    async fn create(&'static self) -> Result<Box<dyn ServerFn>, anyhow::Error> {
-        let req = match self.1.default {
-            RequestKind::WithName(name) => self.1.with_name(name),
+impl CreatorFn for Creator {
+    async fn create(&self) -> Result<Box<dyn ServerFn>, anyhow::Error> {
+        let req = match &self.1.default {
+            RequestKind::WithName(name) => self.1.with_name(&name),
             RequestKind::WithPrefix(prefix) => self.1.with_prefix(&format!("{}{}", prefix, rand_str())),
         };
         let str = serde_json::to_string::<Request>(&req)?;
@@ -144,7 +144,7 @@ impl <'creator, 'server> CreatorFn<'creator, 'server> for Creator<'creator> {
             .await?;
         
         let mut s: Server = serde_json::from_str(&res)?;
-        s.auth = Some(&self.0);
+        s.auth = Some(self.0.clone());
         Ok(Box::new(s))
     }
 }
@@ -168,7 +168,7 @@ impl ServerFn for Server {
     async fn update(&mut self) -> Result<(), anyhow::Error> {
         let text = reqwest::Client::new()
             .get(&format!("{}/v2/droplets/{}", URL, self.droplet.as_ref().unwrap().id.unwrap()))
-            .header("Authorization", &format!("Bearer {}", self.auth.unwrap()))
+            .header("Authorization", &format!("Bearer {}", self.auth.as_ref().unwrap()))
             .send()
             .await?
             .text()
