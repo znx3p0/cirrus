@@ -2,7 +2,7 @@
 
 use async_trait::async_trait;
 
-use crate::{CreatorFn, DeleteResult, RequestCreator, RequestFn, ServerFn};
+use crate::prelude::*;
 
 
 // All providers must have the following structs:

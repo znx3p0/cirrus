@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use serde::{Deserialize};
 
-use crate::CreatorFn;
+use crate::prelude::CreatorFn;
 
 #[derive(Deserialize, Debug)]
 pub struct LoadableDynamicCreator {

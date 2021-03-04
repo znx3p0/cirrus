@@ -1,17 +1,9 @@
 
-use async_trait::async_trait;
 use serde::{Serialize, Deserialize};
 
-#[async_trait]
-pub trait ServerFn {
-    async fn delete(&self) -> Result<Box<dyn DeleteResult>, anyhow::Error>;
-    async fn update(&mut self)-> Result<(), anyhow::Error>;
-    async fn as_standard_server(&mut self) -> Result<StandardServer, anyhow::Error>;
-    fn needs_update(&self) -> bool;
-}
 
-pub trait DeleteResult {}
-impl DeleteResult for () {}
+
+
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct StandardServer {
@@ -19,23 +11,37 @@ pub struct StandardServer {
     pub id: String,
     pub password: Option<String>,
 }
+pub mod prelude {
+    use async_trait::async_trait;
+    use crate::*;
 
-pub trait RequestFn {}
+    #[async_trait]
+    pub trait CreatorFn {
+        async fn create(&self) -> Result<Box<dyn ServerFn>, anyhow::Error>;
+    }
 
+    pub trait DeleteResult {}
+    impl DeleteResult for () {}
 
-pub trait RequestCreator {
-    type Request: RequestFn;
+    pub trait RequestFn {}
 
-    fn with_name(&self, name: &str) -> Self::Request;
-    fn with_prefix(&self, name: &str) -> Self::Request;
+    pub trait RequestCreator {
+        type Request: RequestFn;
+
+        fn with_name(&self, name: &str) -> Self::Request;
+        fn with_prefix(&self, name: &str) -> Self::Request;
+    }
+
+    #[async_trait]
+    pub trait ServerFn {
+        async fn delete(&self) -> Result<Box<dyn DeleteResult>, anyhow::Error>;
+        async fn update(&mut self)-> Result<(), anyhow::Error>;
+        async fn as_standard_server(&mut self) -> Result<StandardServer, anyhow::Error>;
+        fn needs_update(&self) -> bool;
+    }
 }
 
-#[async_trait]
-pub trait CreatorFn {
-    async fn create(&self) -> Result<Box<dyn ServerFn>, anyhow::Error>;
-}
-
-
+use prelude::*;
 
 impl std::fmt::Debug for dyn CreatorFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
