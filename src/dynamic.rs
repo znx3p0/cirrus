@@ -10,6 +10,7 @@ pub struct LoadableDynamicCreator {
     pub api_key: String,
     pub provider: String,
 
+    pub distro: Option<String>,
     pub region: Option<String>,
     pub size: Option<String>,
     pub image: Option<String>,
@@ -24,7 +25,8 @@ pub struct DynamicCreator {
     pub creator: Arc<Box<dyn CreatorFn>>,
 }
 
-#[derive(Debug)]
+
+#[derive(Debug, Clone)]
 pub enum Provider {
     DigitalOcean,
     Fake,

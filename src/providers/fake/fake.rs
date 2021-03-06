@@ -102,6 +102,6 @@ impl ServerFn for Server {
         })
     }
 
-    fn needs_update(&self) -> bool { true }
+    fn needs_update(&self) -> bool { false }
 }
 
