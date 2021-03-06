@@ -45,9 +45,9 @@ pub async fn load() -> Result<DynamicCreator, anyhow::Error> {
     let creator: Arc<Box<dyn CreatorFn>> = match &provider {
         Provider::DigitalOcean => {
 
-            let image = match dn.image.unwrap_or_default().as_str() {
-                "ubuntu" => crate::providers::digital_ocean::images::UBUNTU_20_04.into(),
-                "default" => crate::providers::digital_ocean::images::UBUNTU_20_04.into(),
+            let image = match dn.image.unwrap_or_default().to_uppercase().as_str() {
+                "UBUNTU" => crate::providers::digital_ocean::images::UBUNTU_20_04.into(),
+                "DEFAULT" => crate::providers::digital_ocean::images::UBUNTU_20_04.into(),
                 "" => crate::providers::digital_ocean::images::UBUNTU_20_04.into(),
                 s => s.into(),
             };
