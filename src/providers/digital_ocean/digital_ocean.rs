@@ -166,7 +166,6 @@ impl ServerFn for Server {
             .text()
             .await?;
 
-        println!("{}", res);
         Ok(Box::new(()))
     }
 
@@ -186,7 +185,6 @@ impl ServerFn for Server {
             .text()
             .await?;
 
-        println!("{:#?}", text);
         let server = serde_json::from_str::<Server>(&text)?;
         self.droplet = server.droplet;
         self.links = server.links;
