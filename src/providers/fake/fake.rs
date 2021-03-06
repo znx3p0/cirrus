@@ -63,7 +63,7 @@ impl Creator {
 
 #[async_trait]
 impl CreatorFn for Creator {
-    async fn create(&self) -> Result<Box<dyn ServerFn>, anyhow::Error> {
+    async fn create(&self) -> Result<Box<dyn ServerFn + Send + Sync>, anyhow::Error> {
         let res = reqwest::Client::new()
             .get(&format!("{}/fake/create", URL))
             .send()

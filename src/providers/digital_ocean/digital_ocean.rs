@@ -126,7 +126,7 @@ impl Creator {
 
 #[async_trait]
 impl CreatorFn for Creator {
-    async fn create(&self) -> Result<Box<dyn ServerFn>, anyhow::Error> {
+    async fn create(&self) -> Result<Box<dyn ServerFn + Send + Sync>, anyhow::Error> {
         let req = match &self.1.default {
             RequestKind::WithName(name) => self.1.with_name(&name),
             RequestKind::WithPrefix(prefix) => self.1.with_prefix(&format!("{}{}", prefix, rand_str())),

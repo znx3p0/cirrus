@@ -17,7 +17,7 @@ pub mod prelude {
 
     #[async_trait]
     pub trait CreatorFn {
-        async fn create(&self) -> Result<Box<dyn ServerFn>, anyhow::Error>;
+        async fn create(&self) -> Result<Box<dyn ServerFn + Send + Sync>, anyhow::Error>;
     }
 
     pub trait DeleteResult {}
