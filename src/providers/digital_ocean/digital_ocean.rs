@@ -79,7 +79,7 @@ use crate::StandardServer;
 
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
-use std::{borrow::Borrow, iter, sync::Arc};
+use std::{iter, sync::Arc};
 
 fn rand_str() -> String {
     let mut rng = thread_rng();
@@ -197,15 +197,10 @@ impl ServerFn for Server {
         let ip = match self.droplet.as_ref() {
             Some(s) => match s.networks.as_ref() {
                 Some(s) => match s.v4.as_ref() {
-                    Some(s) => match s.first() {
-                        Some(s) => match s {
-                            Some(s) => match s.ip_address.borrow() {
-                                Some(s) => s.clone(),
-                                None => return Err(anyhow::anyhow!("No ip address found")),
-                            },
-                            None => return Err(anyhow::anyhow!("No ipv4 networks found")),
-                        },
-                        None => return Err(anyhow::anyhow!("No networks found")),
+                    Some(s) => {
+                        let s = s.into_iter().filter_map(|s| Some(s.as_ref().unwrap())).collect::<Vec<_>>();
+                        let s = s.into_iter().filter(|s| s.server_type.as_ref().unwrap() == "public" ).collect::<Vec<_>>();
+                        s.first().as_ref().unwrap().ip_address.as_ref().unwrap().clone()
                     },
                     None => return Err(anyhow::anyhow!("No networks found")),
                 },
@@ -220,8 +215,8 @@ impl ServerFn for Server {
         };
 
         Ok(StandardServer {
-            ip: ip,
-            id: id,
+            ip,
+            id,
             password: None,
         })
     }
