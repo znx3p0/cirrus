@@ -196,10 +196,24 @@ impl ServerFn for Server {
             Some(s) => match s.networks.as_ref() {
                 Some(s) => match s.v4.as_ref() {
                     Some(s) => {
-                        let s = s.into_iter().filter_map(|s| Some(s.as_ref().unwrap())).collect::<Vec<_>>();
-                        let s = s.into_iter().filter(|s| s.server_type.as_ref().unwrap() == "public" ).collect::<Vec<_>>();
-                        s.first().as_ref().unwrap().ip_address.as_ref().unwrap().clone()
-                    },
+                        let s = s
+                            .into_iter()
+                            .filter_map(|s| Some(s.as_ref().unwrap()))
+                            .collect::<Vec<_>>();
+
+                        let s = s
+                            .into_iter()
+                            .filter(|s| s.server_type.as_ref().unwrap() == "public")
+                            .collect::<Vec<_>>();
+
+                        match s.first().as_ref() {
+                            Some(s) => match s.ip_address.as_ref() {
+                                Some(s) => s.clone(),
+                                None => return Err(anyhow::anyhow!("No ip address found")),
+                            },
+                            None => return Err(anyhow::anyhow!("No ip addresses found")),
+                        }
+                    }
                     None => return Err(anyhow::anyhow!("No networks found")),
                 },
                 None => return Err(anyhow::anyhow!("No networks found")),
