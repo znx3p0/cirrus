@@ -119,7 +119,7 @@ pub mod images {
     pub const UBUNTU_20_04: &str = "ubuntu-20-04-x64";
 }
 impl Creator {
-    pub async fn new(meta: &str, request_creator: RqCr) -> Box<dyn CreatorFn> {
+    pub async fn new(meta: &str, request_creator: RqCr) -> Box<dyn CreatorFn + Send + Sync> {
         Box::new(Creator(Arc::new(meta.to_string()), request_creator))
     }
 }

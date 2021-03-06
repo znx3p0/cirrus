@@ -56,7 +56,7 @@ use crate::StandardServer;
 // }
 
 impl Creator {
-    pub async fn new(meta: &str, request_creator: RqCr) -> Box<dyn CreatorFn> {
+    pub async fn new(meta: &str, request_creator: RqCr) -> Box<dyn CreatorFn + Send + Sync> {
         Box::new(Creator(meta.to_string(), request_creator))
     }
 }
