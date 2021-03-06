@@ -1,9 +1,6 @@
-
-
 use std::sync::Arc;
 
-use serde::{Serialize, Deserialize};
-
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Server {
@@ -12,7 +9,7 @@ pub struct Server {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub links: Option<Links>,
     #[serde(skip)]
-    pub auth: Option<Arc<String>>
+    pub auth: Option<Arc<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

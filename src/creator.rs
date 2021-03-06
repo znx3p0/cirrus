@@ -1,9 +1,4 @@
-
-use serde::{Serialize, Deserialize};
-
-
-
-
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct StandardServer {
@@ -12,8 +7,8 @@ pub struct StandardServer {
     pub password: Option<String>,
 }
 pub mod prelude {
-    use async_trait::async_trait;
     use crate::*;
+    use async_trait::async_trait;
 
     #[async_trait]
     pub trait CreatorFn: Send + Sync {
@@ -35,7 +30,7 @@ pub mod prelude {
     #[async_trait]
     pub trait ServerFn {
         async fn delete(&self) -> Result<Box<dyn DeleteResult>, anyhow::Error>;
-        async fn update(&mut self)-> Result<(), anyhow::Error>;
+        async fn update(&mut self) -> Result<(), anyhow::Error>;
         async fn as_standard_server(&mut self) -> Result<StandardServer, anyhow::Error>;
         fn needs_update(&self) -> bool;
     }
@@ -49,7 +44,7 @@ impl std::fmt::Debug for dyn CreatorFn + Send + Sync {
     }
 }
 
-impl <T> std::fmt::Debug for dyn RequestCreator<Request = T> + Send + Sync {
+impl<T> std::fmt::Debug for dyn RequestCreator<Request = T> + Send + Sync {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("dyn RequestCreator<T>")
     }
@@ -72,5 +67,3 @@ impl std::fmt::Debug for dyn DeleteResult + Send + Sync {
         f.write_str("dyn DeleteResult")
     }
 }
-
-

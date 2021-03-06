@@ -1,7 +1,6 @@
-
 use std::sync::Arc;
 
-use serde::{Deserialize};
+use serde::Deserialize;
 
 use crate::prelude::CreatorFn;
 
@@ -25,7 +24,6 @@ pub struct DynamicCreator {
     pub creator: Arc<Box<dyn CreatorFn + Send + Sync>>,
 }
 
-
 #[derive(Debug, Clone)]
 pub enum Provider {
     DigitalOcean,
@@ -39,12 +37,11 @@ pub async fn load() -> Result<DynamicCreator, anyhow::Error> {
     let provider = match dn.provider.as_str() {
         "fake" => Provider::Fake,
         "digital ocean" => Provider::DigitalOcean,
-        _ => return Err(anyhow::anyhow!("non-existing provider"))
+        _ => return Err(anyhow::anyhow!("non-existing provider")),
     };
 
     let creator: Arc<Box<dyn CreatorFn + Send + Sync>> = match &provider {
         Provider::DigitalOcean => {
-
             let image = match dn.image.unwrap_or_default().to_uppercase().as_str() {
                 "UBUNTU" => crate::providers::digital_ocean::images::UBUNTU_20_04.into(),
                 "DEFAULT" => crate::providers::digital_ocean::images::UBUNTU_20_04.into(),
@@ -52,10 +49,16 @@ pub async fn load() -> Result<DynamicCreator, anyhow::Error> {
                 s => s.into(),
             };
 
-            let region = dn.region.unwrap_or(crate::providers::digital_ocean::datacenters::NY1.into());
-            let size = dn.size.unwrap_or(crate::providers::digital_ocean::droplets::S1GB_1CPU.into());
+            let region = dn
+                .region
+                .unwrap_or(crate::providers::digital_ocean::datacenters::NY1.into());
+            let size = dn
+                .size
+                .unwrap_or(crate::providers::digital_ocean::droplets::S1GB_1CPU.into());
 
-            let default = crate::providers::digital_ocean::RequestKind::WithPrefix(dn.default.unwrap_or_default());
+            let default = crate::providers::digital_ocean::RequestKind::WithPrefix(
+                dn.default.unwrap_or_default(),
+            );
 
             // dn.api_key
             let rqcr = crate::providers::digital_ocean::RqCr {

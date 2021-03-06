@@ -1,9 +1,6 @@
-
-
 use async_trait::async_trait;
 
 use crate::prelude::*;
-
 
 // All providers must have the following structs:
 //      Server              -> implement ServerFn
@@ -16,11 +13,8 @@ use crate::prelude::*;
 // The inner workings of the api are not strict, but they should look a bit like this file
 // Adding new traits and functions to the standard structures
 
-
 #[allow(unused)]
 const URL: &str = "https://api.digitalocean.com";
-
-
 
 // The server struct is obligatory.
 // This server struct implements the ServerFn trait, which provides a simple interface
@@ -33,13 +27,20 @@ use super::digital_ocean_response::Server;
 // The creator struct stores information needed to create new servers with the underlying provider.
 // The creator struct implements the ServerFn trait, which provides a simple interface for creating new servers.
 #[derive(Debug)]
-pub struct Creator(pub Arc<String> /* api key */, pub RqCr /* request creator */);
+pub struct Creator(
+    pub Arc<String>, /* api key */
+    pub RqCr,        /* request creator */
+);
 
 use super::digital_ocean_request::Server as Request;
 
 #[derive(Debug)]
 pub struct RqCr {
-    pub region: String, pub size: String, pub image: String, pub ssh_keys: Option<Vec<String>>, pub default: RequestKind
+    pub region: String,
+    pub size: String,
+    pub image: String,
+    pub ssh_keys: Option<Vec<String>>,
+    pub default: RequestKind,
 }
 
 #[derive(Debug)]
@@ -72,14 +73,13 @@ impl RequestCreator for RqCr {
         rq.ssh_keys = self.ssh_keys.clone();
         rq
     }
-
 }
 
 use crate::StandardServer;
 
-use std::{borrow::Borrow, iter, sync::Arc};
-use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
+use std::{borrow::Borrow, iter, sync::Arc};
 
 fn rand_str() -> String {
     let mut rng = thread_rng();
@@ -129,7 +129,9 @@ impl CreatorFn for Creator {
     async fn create(&self) -> Result<Box<dyn ServerFn + Send + Sync>, anyhow::Error> {
         let req = match &self.1.default {
             RequestKind::WithName(name) => self.1.with_name(&name),
-            RequestKind::WithPrefix(prefix) => self.1.with_prefix(&format!("{}{}", prefix, rand_str())),
+            RequestKind::WithPrefix(prefix) => {
+                self.1.with_prefix(&format!("{}{}", prefix, rand_str()))
+            }
         };
         let str = serde_json::to_string::<Request>(&req)?;
         let req = reqwest::Client::new()
@@ -137,12 +139,8 @@ impl CreatorFn for Creator {
             .header("Authorization", &format!("Bearer {}", self.0))
             .header("Content-Type", "application/json")
             .body(str);
-        let res = req
-            .send()
-            .await?
-            .text()
-            .await?;
-        
+        let res = req.send().await?.text().await?;
+
         let mut s: Server = serde_json::from_str(&res)?;
         s.auth = Some(self.0.clone());
         Ok(Box::new(s))
@@ -153,27 +151,41 @@ impl CreatorFn for Creator {
 impl ServerFn for Server {
     async fn delete(&self) -> Result<Box<dyn DeleteResult>, anyhow::Error> {
         let res = reqwest::Client::new()
-            .delete(&format!("{}/v2/droplets/{}", URL, self.droplet.as_ref().unwrap().id.unwrap()))
-            .header("Authorization", &format!("Bearer {}", self.auth.as_ref().unwrap()))
+            .delete(&format!(
+                "{}/v2/droplets/{}",
+                URL,
+                self.droplet.as_ref().unwrap().id.unwrap()
+            ))
+            .header(
+                "Authorization",
+                &format!("Bearer {}", self.auth.as_ref().unwrap()),
+            )
             .header("Content-Type", "application/json")
             .send()
             .await?
             .text()
             .await?;
-        
+
         println!("{}", res);
         Ok(Box::new(()))
     }
 
     async fn update(&mut self) -> Result<(), anyhow::Error> {
         let text = reqwest::Client::new()
-            .get(&format!("{}/v2/droplets/{}", URL, self.droplet.as_ref().unwrap().id.unwrap()))
-            .header("Authorization", &format!("Bearer {}", self.auth.as_ref().unwrap()))
+            .get(&format!(
+                "{}/v2/droplets/{}",
+                URL,
+                self.droplet.as_ref().unwrap().id.unwrap()
+            ))
+            .header(
+                "Authorization",
+                &format!("Bearer {}", self.auth.as_ref().unwrap()),
+            )
             .send()
             .await?
             .text()
             .await?;
-        
+
         let server = serde_json::from_str::<Server>(&text)?;
         self.droplet = server.droplet;
         self.links = server.links;
@@ -181,47 +193,39 @@ impl ServerFn for Server {
     }
 
     async fn as_standard_server(&mut self) -> Result<StandardServer, anyhow::Error> {
-
         let ip = match self.droplet.as_ref() {
-            Some(s) => {
-                match s.networks.as_ref() {
-                    Some(s) => {
-                        match s.v4.as_ref() {
-                            Some(s) => {
-                                match s.first() {
-                                    Some(s) => match s {
-                                        Some(s) => match s.ip_address.borrow() {
-                                            Some(s) => {
-                                                s.clone()
-                                            },
-                                            None => return Err(anyhow::anyhow!("No ip address found"))
-                                        }
-                                        None => return Err(anyhow::anyhow!("No ipv4 networks found"))
-                                    }
-                                    None => return Err(anyhow::anyhow!("No networks found"))
-                                }
+            Some(s) => match s.networks.as_ref() {
+                Some(s) => match s.v4.as_ref() {
+                    Some(s) => match s.first() {
+                        Some(s) => match s {
+                            Some(s) => match s.ip_address.borrow() {
+                                Some(s) => s.clone(),
+                                None => return Err(anyhow::anyhow!("No ip address found")),
                             },
-                            None => return Err(anyhow::anyhow!("No networks found"))
-                        }
+                            None => return Err(anyhow::anyhow!("No ipv4 networks found")),
+                        },
+                        None => return Err(anyhow::anyhow!("No networks found")),
                     },
-                    None => return Err(anyhow::anyhow!("No networks found"))
-                }
+                    None => return Err(anyhow::anyhow!("No networks found")),
+                },
+                None => return Err(anyhow::anyhow!("No networks found")),
             },
-            None => return Err(anyhow::anyhow!("No droplet found"))
+            None => return Err(anyhow::anyhow!("No droplet found")),
         };
 
         let id = match self.droplet.as_ref().unwrap().id {
             Some(id) => id.to_string(),
-            None => return Err(anyhow::anyhow!("No id found"))
+            None => return Err(anyhow::anyhow!("No id found")),
         };
 
         Ok(StandardServer {
             ip: ip,
             id: id,
-            password: None
+            password: None,
         })
     }
 
-    fn needs_update(&self) -> bool { true }
+    fn needs_update(&self) -> bool {
+        true
+    }
 }
-

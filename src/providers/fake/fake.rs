@@ -1,14 +1,9 @@
-
-
-
 use async_trait::async_trait;
 
 use crate::prelude::*;
 
-#[allow(unused)]
 const URL: &str = "http://localhost:8080";
-
-
+use crate::StandardServer;
 
 // The server struct is obligatory.
 // This server struct implements the ServerFn trait, which provides a simple interface
@@ -40,20 +35,7 @@ impl RequestCreator for RqCr {
     fn with_prefix(&self, _prefix: &str) -> Self::Request {
         ()
     }
-
 }
-
-use crate::StandardServer;
-
-
-// fn rand_str() -> String {
-//     let mut rng = thread_rng();
-//     iter::repeat(())
-//         .map(|()| rng.sample(Alphanumeric))
-//         .map(char::from)
-//         .take(8)
-//         .collect()
-// }
 
 impl Creator {
     pub async fn new(meta: &str, request_creator: RqCr) -> Box<dyn CreatorFn + Send + Sync> {
@@ -70,7 +52,7 @@ impl CreatorFn for Creator {
             .await?
             .text()
             .await?;
-                
+
         let s: Server = serde_json::from_str(&res)?;
         Ok(Box::new(s))
     }
@@ -80,7 +62,7 @@ impl CreatorFn for Creator {
 impl ServerFn for Server {
     async fn delete(&self) -> Result<Box<dyn DeleteResult>, anyhow::Error> {
         reqwest::Client::new()
-        .delete(&format!("{}/fake/delete/{}", URL, self.id))
+            .delete(&format!("{}/fake/delete/{}", URL, self.id))
             .send()
             .await?
             .text()
@@ -94,14 +76,14 @@ impl ServerFn for Server {
     }
 
     async fn as_standard_server(&mut self) -> Result<StandardServer, anyhow::Error> {
-
         Ok(StandardServer {
             ip: self.ip.clone(),
             id: self.id.clone(),
-            password: self.password.clone()
+            password: self.password.clone(),
         })
     }
 
-    fn needs_update(&self) -> bool { false }
+    fn needs_update(&self) -> bool {
+        false
+    }
 }
-
