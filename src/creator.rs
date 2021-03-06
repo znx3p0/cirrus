@@ -16,7 +16,7 @@ pub mod prelude {
     use crate::*;
 
     #[async_trait]
-    pub trait CreatorFn {
+    pub trait CreatorFn: Send + Sync {
         async fn create(&self) -> Result<Box<dyn ServerFn + Send + Sync>, anyhow::Error>;
     }
 
@@ -43,31 +43,31 @@ pub mod prelude {
 
 use prelude::*;
 
-impl std::fmt::Debug for dyn CreatorFn {
+impl std::fmt::Debug for dyn CreatorFn + Send + Sync {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("dyn CreatorFn")
     }
 }
 
-impl <T> std::fmt::Debug for dyn RequestCreator<Request = T> {
+impl <T> std::fmt::Debug for dyn RequestCreator<Request = T> + Send + Sync {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("dyn RequestCreator<T>")
     }
 }
 
-impl std::fmt::Debug for dyn RequestFn {
+impl std::fmt::Debug for dyn RequestFn + Send + Sync {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("dyn RequestFn")
     }
 }
 
-impl std::fmt::Debug for dyn ServerFn {
+impl std::fmt::Debug for dyn ServerFn + Send + Sync {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("dyn ServerFn")
     }
 }
 
-impl std::fmt::Debug for dyn DeleteResult {
+impl std::fmt::Debug for dyn DeleteResult + Send + Sync {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("dyn DeleteResult")
     }

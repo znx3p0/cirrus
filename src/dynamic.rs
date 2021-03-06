@@ -22,7 +22,7 @@ pub struct LoadableDynamicCreator {
 pub struct DynamicCreator {
     pub api_key: String,
     pub provider: Provider,
-    pub creator: Arc<Box<dyn CreatorFn>>,
+    pub creator: Arc<Box<dyn CreatorFn + Send + Sync>>,
 }
 
 
@@ -42,7 +42,7 @@ pub async fn load() -> Result<DynamicCreator, anyhow::Error> {
         _ => return Err(anyhow::anyhow!("non-existing provider"))
     };
 
-    let creator: Arc<Box<dyn CreatorFn>> = match &provider {
+    let creator: Arc<Box<dyn CreatorFn + Send + Sync>> = match &provider {
         Provider::DigitalOcean => {
 
             let image = match dn.image.unwrap_or_default().to_uppercase().as_str() {
