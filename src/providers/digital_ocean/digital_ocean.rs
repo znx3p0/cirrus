@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use serde_json::to_string;
 
 use crate::prelude::*;
 
@@ -23,6 +24,7 @@ const URL: &str = "https://api.digitalocean.com";
 // The server struct represents a server to be created by the creator,
 // and stores information about it, such as the ip, region, etc.
 use super::digital_ocean_response::Server;
+use super::digital_ocean_response::LoadableServer;
 
 // The creator struct stores information needed to create new servers with the underlying provider.
 // The creator struct implements the ServerFn trait, which provides a simple interface for creating new servers.
@@ -145,12 +147,26 @@ impl CreatorFn for Creator {
         s.auth = Some(self.0.clone());
         Ok(Box::new(s))
     }
+
+    async fn from_serializable(&self, s: String) -> Result<Box<dyn ServerFn + Send + Sync>, anyhow::Error> {
+
+        let p = match serde_json::from_str::<LoadableServer>(&s) {
+            Ok(s) => s,
+            Err(e) => return Err(anyhow::anyhow!(e))
+        };
+
+        Ok(Box::new(Server {
+            droplet: p.droplet,
+            links: p.links,
+            auth: Some(Arc::new(p.auth.unwrap())),
+        }))
+    }
 }
 
 #[async_trait]
 impl ServerFn for Server {
     async fn delete(&self) -> Result<Box<dyn DeleteResult>, anyhow::Error> {
-        let res = reqwest::Client::new()
+        let _ = reqwest::Client::new()
             .delete(&format!(
                 "{}/v2/droplets/{}",
                 URL,
@@ -236,4 +252,22 @@ impl ServerFn for Server {
     fn needs_update(&self) -> bool {
         true
     }
+
+    fn as_serializable(&self) -> Result<String, anyhow::Error> {
+        println!("{}", self.auth.clone().unwrap());
+
+        let auth = self.auth.as_ref().and_then(|s| Some(s.to_string()));
+        let lb = LoadableServer {
+            droplet: self.droplet.clone(),
+            links: self.links.clone(),
+            auth,
+        };
+
+        match serde_json::to_string::<LoadableServer>(&lb) {
+            Ok(s) => Ok(s),
+            Err(e) => Err(anyhow::anyhow!(e))
+        }
+    }
+
 }
+

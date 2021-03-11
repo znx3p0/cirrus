@@ -56,6 +56,13 @@ impl CreatorFn for Creator {
         let s: Server = serde_json::from_str(&res)?;
         Ok(Box::new(s))
     }
+
+    async fn from_serializable(&self, s: String) -> Result<Box<dyn ServerFn + Send + Sync>, anyhow::Error> {
+        match serde_json::from_str::<Server>(&s) {
+            Ok(s) => Ok(Box::new(s)),
+            Err(e) => Err(anyhow::anyhow!(e))
+        }
+    }
 }
 
 #[async_trait]
@@ -85,5 +92,9 @@ impl ServerFn for Server {
 
     fn needs_update(&self) -> bool {
         false
+    }
+
+    fn as_serializable(&self) -> Result<String, anyhow::Error> {
+        Ok(serde_json::to_string(self).unwrap())
     }
 }

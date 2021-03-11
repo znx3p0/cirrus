@@ -13,6 +13,16 @@ pub struct Server {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct LoadableServer {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub droplet: Option<Droplet>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub links: Option<Links>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auth: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Droplet {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<i64>,

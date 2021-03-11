@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use serde::Deserialize;
 
-use crate::prelude::CreatorFn;
+use crate::prelude::{CreatorFn, ServerFn};
 
 #[derive(Deserialize, Debug)]
 pub struct LoadableDynamicCreator {
@@ -29,6 +29,9 @@ pub enum Provider {
     DigitalOcean,
     Fake,
 }
+
+
+
 
 pub async fn load() -> Result<DynamicCreator, anyhow::Error> {
     let s = std::fs::read_to_string("provider.json")?;
@@ -85,3 +88,5 @@ pub async fn load() -> Result<DynamicCreator, anyhow::Error> {
 
     Ok(p)
 }
+
+

@@ -13,25 +13,27 @@ pub mod prelude {
     #[async_trait]
     pub trait CreatorFn: Send + Sync {
         async fn create(&self) -> Result<Box<dyn ServerFn + Send + Sync>, anyhow::Error>;
+        async fn from_serializable(&self, s: String) -> Result<Box<dyn ServerFn + Send + Sync>, anyhow::Error>;
     }
-
+    
     pub trait DeleteResult {}
     impl DeleteResult for () {}
-
+    
     pub trait RequestFn {}
-
+    
     pub trait RequestCreator {
         type Request: RequestFn;
-
+        
         fn with_name(&self, name: &str) -> Self::Request;
         fn with_prefix(&self, name: &str) -> Self::Request;
     }
-
+    
     #[async_trait]
     pub trait ServerFn {
         async fn delete(&self) -> Result<Box<dyn DeleteResult>, anyhow::Error>;
         async fn update(&mut self) -> Result<(), anyhow::Error>;
         async fn as_standard_server(&mut self) -> Result<StandardServer, anyhow::Error>;
+        fn as_serializable(&self) -> Result<String, anyhow::Error>;
         fn needs_update(&self) -> bool;
     }
 }
