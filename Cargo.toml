@@ -17,3 +17,4 @@ rand = "0.8"
 
 [dev-dependencies]
 async-std = "1"
+dotenv = "0.15"
