@@ -1,5 +1,7 @@
-mod creator;
-pub use creator::*;
+
+mod traits;
 pub mod providers;
 
-pub mod dynamic;
+pub mod prelude {
+    pub use super::traits::*;
+}

@@ -1,5 +1,7 @@
-mod digital_ocean;
-pub use digital_ocean::*;
+mod creator;
+mod request;
+pub mod response;
 
-pub mod digital_ocean_request;
-pub mod digital_ocean_response;
+pub use response::Response;
+pub use request::*;
+pub use creator::*;
